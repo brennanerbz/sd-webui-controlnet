@@ -222,7 +222,7 @@ def controlnet_api(_: gr.Blocks, app: FastAPI):
 
 
     @app.post("/controlnet/img2img")
-    async def img2img(
+    def img2img(
         init_images: List[str] = Body([], title='Init Images'),
         mask: str = Body(None, title='Mask'),
         mask_blur: int = Body(30, title='Mask Blur'),
@@ -352,12 +352,16 @@ def controlnet_api(_: gr.Blocks, app: FastAPI):
 
         p.extra_generation_params["Mask blur"] = mask_blur
 
+        shared.state.begin()
+
         processed = scripts.scripts_img2img.run(p, *(p.script_args)) # todo: extend to include wither alwaysvisible scripts
         
         if processed is None: # fall back
            processed = process_images(p)            
 
         p.close()
+
+        shared.state.end()
 
         generation_info_js = processed.js()
         if opts.samples_log_stdout:
